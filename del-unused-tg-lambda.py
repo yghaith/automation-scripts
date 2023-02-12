@@ -13,12 +13,11 @@ def delete_load_balancer_rules_and_target_groups(load_balancer_name):
     end_time = datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
     load_balancer = elbv2.describe_load_balancers(Names=[load_balancer_name])['LoadBalancers'][0]
     load_balancer_arn = load_balancer['LoadBalancerArn']
-    lb_new = "app/stage-infra-poc-internal/502f766dbe5b3419"
+    listener_arn = 'arn:aws:elasticloadbalancing:eu-west-1:652586300051:listener/app/stage-infra-poc-internal/502f766dbe5b3419/5e980efdf194d774'
+    loadbalancer_name_CW= '/'.join(load_balancer_arn.split('/')[1:])
     # Get all target groups associated with the load balancer
-    i=0
     response = elbv2.describe_target_groups(LoadBalancerArn=load_balancer_arn)
     target_group_arns = [tg['TargetGroupArn'] for tg in response['TargetGroups']]
-    target_ids = ['i-0f7efc18e3887fc8e']
     # Get the target group requests metric for each target group for the previous week
     for target_group_arn in target_group_arns:
         tg = target_group_arn.split(':')
@@ -35,7 +34,7 @@ def delete_load_balancer_rules_and_target_groups(load_balancer_name):
                                 "Dimensions": [
                                     {
                                         "Name": "LoadBalancer",
-                                        "Value": lb_new
+                                        "Value": loadbalancer_name_CW
                                     },
                                     {
                                         "Name": "TargetGroup",
@@ -57,7 +56,7 @@ def delete_load_balancer_rules_and_target_groups(load_balancer_name):
             data = sum(metric["MetricDataResults"][0]["Values"])
             if data==0:
                 
-                listener_arn = 'arn:aws:elasticloadbalancing:eu-west-1:652586300051:listener/app/stage-infra-poc-internal/502f766dbe5b3419/5e980efdf194d774'
+                
                 response = elbv2.describe_rules(ListenerArn=listener_arn)
                 rules = response['Rules']
                 for rule in rules:
